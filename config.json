@@ -1,0 +1,9 @@
+{
+  "alert": {"keywords": [], "india": true, "remote": true, "intern": false},
+  "sources": {
+    "greenhouse": ["stripe", "databricks", "cloudflare", "gitlab", "airbnb", "coinbase", "twilio"],
+    "lever": ["palantir", "cred"],
+    "ashby": ["ramp", "notion", "openai"],
+    "amazon": ["intern", "data engineer", "software development engineer"]
+  }
+}

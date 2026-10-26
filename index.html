@@ -1,0 +1,41 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>India + Remote Jobs</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,sans-serif}
+body{margin:0;padding:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:800px){body{grid-template-columns:1fr}}
+section{min-width:0}
+input,textarea{font:inherit;padding:.4rem;margin:.15rem 0;width:100%;box-sizing:border-box}
+input[type=checkbox]{width:auto}
+button{font:inherit;padding:.35rem .7rem;cursor:pointer}
+.job{border:1px solid #8886;border-radius:8px;padding:.6rem;margin:.4rem 0}
+pre{white-space:pre-wrap;border:1px solid #8886;border-radius:8px;padding:.6rem}
+</style>
+<section><h2>Jobs</h2>
+<input id=q placeholder="Keyword (e.g. python, data, sde)" oninput=load()>
+<label><input type=checkbox id=in checked onchange=load()> India</label>
+<label><input type=checkbox id=re checked onchange=load()> Remote</label>
+<label><input type=checkbox id=it onchange=load()> Intern / entry-level</label>
+<div id=jobs></div></section>
+<section><h2>Your profile</h2><div id=pf></div>
+<textarea id=p_resume_text rows=8 placeholder="Paste your resume text here"></textarea>
+<textarea id=p_extra rows=4 placeholder="Skills, projects, notice period, expected CTC, other links..."></textarea>
+<button onclick=save()>Save profile</button>
+<h2>Tailored application</h2><pre id=out>Pick a job and press Tailor.</pre></section>
+<script>
+const F=["name","email","phone","location","linkedin","github","leetcode","portfolio"],$=id=>document.getElementById(id);
+const e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=async(u,o={})=>{const pw=localStorage.pw||(localStorage.pw=prompt('Password'));
+ const r=await fetch(u,{...o,headers:{'x-pass':pw,'Content-Type':'application/json'}});
+ if(r.status==401){delete localStorage.pw;alert('Wrong password, reload and retry');throw 0}return r.json()};
+$('pf').innerHTML=F.map(f=>`<input id=p_${f} placeholder=${f}>`).join('');
+api('/api/profile').then(p=>[...F,'resume_text','extra'].forEach(f=>$('p_'+f).value=p[f]||''));
+async function save(){const p={};[...F,'resume_text','extra'].forEach(f=>p[f]=$('p_'+f).value);
+ await api('/api/profile',{method:'POST',body:JSON.stringify(p)});alert('Saved')}
+async function load(){const js=await api(`/api/jobs?q=${encodeURIComponent($('q').value)}&india=${+$('in').checked}&remote=${+$('re').checked}&intern=${+$('it').checked}`);
+ $('jobs').innerHTML=js.map(j=>`<div class=job><b>${e(j.title)}</b><br>${e(j.company)} · ${e(j.location)}<br>
+ <small>first seen ${new Date(j.seen*1000).toLocaleDateString()}</small><br>
+ <a href="${e(j.url)}" target=_blank>Apply page</a> <button onclick="prep('${e(j._id)}')">Tailor</button></div>`).join('')||'No jobs yet. Run the GitHub workflow once.'}
+async function prep(id){$('out').textContent='Generating...';$('out').textContent=JSON.stringify(await api('/api/tailor/'+id,{method:'POST'}),null,2)}
+load();
+</script>

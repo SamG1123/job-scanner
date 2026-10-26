@@ -1,0 +1,22 @@
+name: scan-jobs
+on:
+  schedule:
+    - cron: "17 */4 * * *"   # every 4 hours at :17 UTC (05:47, 09:47, 13:47, 17:47, 21:47, 01:47 IST)
+  workflow_dispatch:          # "Run workflow" button for manual scans
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install httpx pymongo
+      - run: python scan.py
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}   # optional, defaults to onboarding@resend.dev
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
