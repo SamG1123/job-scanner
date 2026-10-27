@@ -12,12 +12,19 @@ def auth(x_pass: str = Header("")):
 app = FastAPI(dependencies=[Depends(auth)])
 
 @app.get("/api/jobs")
-def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0):
+def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0, all: int = 0):
+    conditions = [{"$or": [{"india": True}, {"remote": True}]}]
     f = {}
-    if q: f["$or"] = [{k: {"$regex": re.escape(q), "$options": "i"}} for k in ("title", "company", "desc")]
-    if india and not remote: f["india"] = True
-    elif remote and not india: f["remote"] = True
-    if intern: f["intern"] = True
+    if q:
+        conditions.append({"$or": [
+            {k: {"$regex": re.escape(q), "$options": "i"}}
+            for k in ("title", "company", "desc")
+        ]})
+    if not all:
+        if india and not remote: conditions.append({"india": True})
+        elif remote and not india: conditions.append({"remote": True})
+        if intern: conditions.append({"intern": True})
+    f["$and"] = conditions
     return list(db.jobs.find(f, {"desc": 0}).sort("seen", -1).limit(200))
 
 @app.get("/api/profile")

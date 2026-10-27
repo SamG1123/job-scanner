@@ -188,6 +188,8 @@ async def scan():
     for (kind, token), jobs in zip(pairs, res):
         for job in jobs:
             classified = classify_job(job)
+            if not classified["india"] and not classified["remote"]:
+                continue
             docs[job["id"]] = dict(
                 _id=job["id"],
                 company="amazon" if kind == "amazon" else token,
@@ -227,7 +229,8 @@ async def scan():
             col.insert_many(new, ordered=False)
         if docs:
             col.update_many({"_id": {"$in": list(docs)}}, {"$set": {"last": now}})
-        col.delete_many({"last": {"$lt": now - 30 * 86400}})
+        col.delete_many({"india": {"$ne": True}, "remote": {"$ne": True}})
+        col.delete_many({"last": {"$lt": now - 10 * 86400}})
     finally:
         client.close()
 

@@ -16,6 +16,7 @@ pre{white-space:pre-wrap;border:1px solid #8886;border-radius:8px;padding:.6rem}
 <label><input type=checkbox id=in checked onchange=load()> India</label>
 <label><input type=checkbox id=re checked onchange=load()> Remote</label>
 <label><input type=checkbox id=it onchange=load()> Intern / entry-level</label>
+<label><input type=checkbox id=all onchange=load()> Show all jobs</label>
 <div id=jobs></div></section>
 <section><h2>Your profile</h2><div id=pf></div>
 <textarea id=p_resume_text rows=8 placeholder="Paste your resume text here"></textarea>
@@ -32,7 +33,7 @@ $('pf').innerHTML=F.map(f=>`<input id=p_${f} placeholder=${f}>`).join('');
 api('/api/profile').then(p=>[...F,'resume_text','extra'].forEach(f=>$('p_'+f).value=p[f]||''));
 async function save(){const p={};[...F,'resume_text','extra'].forEach(f=>p[f]=$('p_'+f).value);
  await api('/api/profile',{method:'POST',body:JSON.stringify(p)});alert('Saved')}
-async function load(){const js=await api(`/api/jobs?q=${encodeURIComponent($('q').value)}&india=${+$('in').checked}&remote=${+$('re').checked}&intern=${+$('it').checked}`);
+async function load(){const js=await api(`/api/jobs?q=${encodeURIComponent($('q').value)}&india=${+$('in').checked}&remote=${+$('re').checked}&intern=${+$('it').checked}&all=${+$('all').checked}`);
  $('jobs').innerHTML=js.map(j=>`<div class=job><b>${e(j.title)}</b><br>${e(j.company)} · ${e(j.location)}<br>
  <small>first seen ${new Date(j.seen*1000).toLocaleDateString()}</small><br>
  <a href="${e(j.url)}" target=_blank>Apply page</a> <button onclick="prep('${e(j._id)}')">Tailor</button></div>`).join('')||'No jobs yet. Run the GitHub workflow once.'}
