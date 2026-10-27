@@ -1,9 +1,40 @@
 {
-  "alert": {"keywords": [], "india": true, "remote": true, "intern": false},
+  "alert": {
+    "keywords": [],
+    "work_modes": [
+      "india",
+      "remote",
+      "hybrid"
+    ],
+    "experience_levels": [
+      "fresher",
+      "internship",
+      "0_years"
+    ]
+  },
   "sources": {
-    "greenhouse": ["stripe", "databricks", "cloudflare", "gitlab", "airbnb", "coinbase", "twilio"],
-    "lever": ["palantir", "cred"],
-    "ashby": ["ramp", "notion", "openai"],
-    "amazon": ["intern", "data engineer", "software development engineer"]
+    "greenhouse": [
+      "stripe",
+      "databricks",
+      "cloudflare",
+      "gitlab",
+      "airbnb",
+      "coinbase",
+      "twilio"
+    ],
+    "lever": [
+      "palantir",
+      "cred"
+    ],
+    "ashby": [
+      "ramp",
+      "notion",
+      "openai"
+    ],
+    "amazon": [
+      "intern",
+      "data engineer",
+      "software development engineer"
+    ]
   }
 }
