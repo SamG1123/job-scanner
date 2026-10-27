@@ -1,10 +1,10 @@
 import os, re, json
-import anthropic
+from openai import OpenAI
 from fastapi import FastAPI, Header, HTTPException, Depends, Body
 from pymongo import MongoClient
 
 db = MongoClient(os.environ["MONGODB_URI"]).jobs  # module-level: reused across warm invocations
-MODEL = os.getenv("MODEL", "claude-sonnet-5-5")
+MODEL = os.getenv("MODEL", "gpt-4o-mini")
 
 def auth(x_pass: str = Header("")):
     if x_pass != os.environ["APP_PASSWORD"]: raise HTTPException(401, "bad password")
@@ -38,6 +38,7 @@ def tailor(jid: str):
     j, p = db.jobs.find_one({"_id": jid}), get_profile()
     if not j: raise HTTPException(404, "job not found")
     if not p.get("resume_text"): return {"error": "Paste your resume text into the profile first."}
-    m = anthropic.Anthropic().messages.create(model=MODEL, max_tokens=2500, system=SYS, messages=[{"role": "user",
+    m = OpenAI().chat.completions.create(model=MODEL, max_tokens=2500, response_format={"type": "json_object"},
+        messages=[{"role": "system", "content": SYS}, {"role": "user",
         "content": f"JOB: {j['company']} - {j['title']} ({j['location']})\n{j['desc']}\n\nCANDIDATE:\n{json.dumps(p)}"}])
-    return json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", m.content[0].text.strip()))
+    return json.loads(m.choices[0].message.content)
