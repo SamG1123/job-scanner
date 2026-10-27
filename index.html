@@ -1,42 +1,113 @@
-<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
-<title>India + Remote Jobs</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Job Scout</title>
 <style>
-:root{color-scheme:light dark;font-family:system-ui,sans-serif}
-body{margin:0;padding:1rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
-@media(max-width:800px){body{grid-template-columns:1fr}}
-section{min-width:0}
-input,textarea{font:inherit;padding:.4rem;margin:.15rem 0;width:100%;box-sizing:border-box}
-input[type=checkbox]{width:auto}
-button{font:inherit;padding:.35rem .7rem;cursor:pointer}
-.job{border:1px solid #8886;border-radius:8px;padding:.6rem;margin:.4rem 0}
-pre{white-space:pre-wrap;border:1px solid #8886;border-radius:8px;padding:.6rem}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb;font-synthesis:none;text-rendering:optimizeLegibility}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e6eaf0}
+.topbar-inner{max-width:1280px;margin:auto;padding:1.2rem 2rem;display:flex;align-items:center;gap:.8rem}
+.topbar-inner>a{margin-left:auto;color:#315fba;font-size:.86rem;font-weight:600}
+.brand-mark{width:2.4rem;height:2.4rem;border-radius:.75rem;background:#eaf1ff;color:#2459c4;display:grid;place-items:center;font-weight:800}
+.brand-title{margin:0;font-size:1.05rem;letter-spacing:-.02em}
+.brand-subtitle{margin:.15rem 0 0;color:#778197;font-size:.82rem}
+main{max-width:1280px;margin:0 auto;padding:2rem;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);gap:1.4rem;align-items:start}
+.panel{min-width:0;background:#fff;border:1px solid #e6eaf0;border-radius:1rem;box-shadow:0 2px 8px #17203308}
+.panel-head{padding:1.25rem 1.4rem;border-bottom:1px solid #edf0f4}
+.panel-head h2,.subhead h2{margin:0;font-size:1.05rem;letter-spacing:-.02em}
+.panel-head p{margin:.35rem 0 0;color:#778197;font-size:.88rem}
+.panel-body{padding:1.25rem 1.4rem}
+.search{position:relative;margin-bottom:1rem}
+.search input{padding-left:2.5rem}
+.search:before{content:"⌕";position:absolute;left:.85rem;top:.35rem;color:#8792a5;font-size:1.35rem}
+input:not([type=checkbox]),textarea{width:100%;font:inherit;font-size:.9rem;color:#172033;background:#fff;border:1px solid #dce2eb;border-radius:.65rem;padding:.7rem .8rem;outline:none;transition:border-color .15s,box-shadow .15s}
+input:not([type=checkbox]):focus,textarea:focus{border-color:#6b91e8;box-shadow:0 0 0 3px #356fe51c}
+input::placeholder,textarea::placeholder{color:#98a1b1}
+.filters{display:flex;flex-wrap:wrap;gap:.55rem;margin-bottom:1rem}
+.filter{display:inline-flex;align-items:center;gap:.45rem;padding:.48rem .7rem;border:1px solid #e3e7ed;border-radius:2rem;color:#4d586b;font-size:.82rem;cursor:pointer;user-select:none}
+.filter:has(input:checked){background:#edf3ff;border-color:#cddcff;color:#2459c4}
+input[type=checkbox]{width:1rem;height:1rem;margin:0;accent-color:#356fe5;cursor:pointer}
+.result-label{font-size:.8rem;color:#8792a5;margin:.1rem 0 .65rem}
+#jobs{display:grid;gap:.65rem}
+.job{padding:1rem;border:1px solid #e6eaf0;border-radius:.8rem;transition:border-color .15s,box-shadow .15s}
+.job:hover{border-color:#cbd6e8;box-shadow:0 3px 12px #1720330b}
+.job-title{margin:0;font-size:.96rem;font-weight:650;line-height:1.4}
+.job-company{margin:.3rem 0;color:#596579;font-size:.86rem}
+.job-date{color:#8792a5;font-size:.77rem}
+.job-actions{display:flex;align-items:center;gap:.9rem;margin-top:.8rem}
+a{color:#315fba;text-decoration:none;font-size:.84rem;font-weight:550}
+a:hover{text-decoration:underline}
+button{font:inherit;cursor:pointer;border:0}
+.button-primary{background:#315fba;color:#fff;border-radius:.55rem;padding:.55rem .85rem;font-size:.83rem;font-weight:600}
+.button-primary:hover{background:#244e9f}
+.button-secondary{background:#edf3ff;color:#315fba;border-radius:.55rem;padding:.7rem .95rem;font-size:.87rem;font-weight:600}
+.button-secondary:hover{background:#e2ecff}
+.empty{padding:2rem 1rem;text-align:center;border:1px dashed #dce2eb;border-radius:.8rem;color:#778197;font-size:.88rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+textarea{resize:vertical;line-height:1.5;margin-top:.65rem}
+.field-label{display:block;color:#596579;font-size:.78rem;font-weight:600;margin:.9rem 0 .35rem}
+.save-row{display:flex;align-items:center;gap:.8rem;margin-top:.8rem}
+.save-row button{width:100%}
+#save-status{font-size:.8rem;color:#39805b}
+.divider{border:0;border-top:1px solid #edf0f4;margin:1.4rem 0}
+.subhead{margin-bottom:.75rem}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;min-height:5rem;max-height:34rem;overflow:auto;margin:0;padding:1rem;background:#f8f9fc;border:1px solid #e6eaf0;border-radius:.75rem;color:#344054;font: .82rem/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+@media(max-width:850px){main{grid-template-columns:1fr;padding:1.25rem}.topbar-inner{padding:1rem 1.25rem}}
+@media(max-width:480px){main{padding:.8rem}.panel-head,.panel-body{padding:1rem}.form-grid{grid-template-columns:1fr}.job-actions{gap:.7rem}.topbar-inner{padding:.85rem 1rem}}
 </style>
-<section><h2>Jobs</h2>
-<input id=q placeholder="Keyword (e.g. python, data, sde)" oninput=load()>
-<label><input type=checkbox id=in checked onchange=load()> India</label>
-<label><input type=checkbox id=re checked onchange=load()> Remote</label>
-<label><input type=checkbox id=it onchange=load()> Intern / entry-level</label>
-<label><input type=checkbox id=all onchange=load()> Show all jobs</label>
-<div id=jobs></div></section>
-<section><h2>Your profile</h2><div id=pf></div>
-<textarea id=p_resume_text rows=8 placeholder="Paste your resume text here"></textarea>
-<textarea id=p_extra rows=4 placeholder="Skills, projects, notice period, expected CTC, other links..."></textarea>
-<button onclick=save()>Save profile</button>
-<h2>Tailored application</h2><pre id=out>Pick a job and press Tailor.</pre></section>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><div class="brand-mark">J</div><div><h1 class="brand-title">Job Scout</h1><p class="brand-subtitle">Find your next opportunity</p></div><a href="/all-jobs.html">Browse all jobs →</a></div></header>
+<main>
+<section class="panel">
+<div class="panel-head"><h2>Job openings</h2><p>Search recent roles that match your interests.</p></div>
+<div class="panel-body">
+<div class="search"><input id="q" placeholder="Search by title, company, or keyword" oninput="load()" aria-label="Search jobs"></div>
+<div class="filters">
+<label class="filter"><input type="checkbox" id="in" checked onchange="load()"> India</label>
+<label class="filter"><input type="checkbox" id="re" checked onchange="load()"> Remote</label>
+<label class="filter"><input type="checkbox" id="it" onchange="load()"> Intern / entry-level</label>
+<label class="filter"><input type="checkbox" id="all" onchange="load()"> Show all jobs</label>
+</div>
+<p class="result-label" id="job-count" aria-live="polite"></p>
+<div id="jobs"></div>
+</div>
+</section>
+<section class="panel">
+<div class="panel-head"><h2>Your profile</h2><p>Keep your details ready for tailored applications.</p></div>
+<div class="panel-body">
+<div class="form-grid" id="pf"></div>
+<label class="field-label" for="p_resume_text">Resume</label>
+<textarea id="p_resume_text" rows="8" placeholder="Paste your resume text here"></textarea>
+<label class="field-label" for="p_extra">Additional details</label>
+<textarea id="p_extra" rows="3" placeholder="Skills, projects, notice period, expected CTC, other links..."></textarea>
+<div class="save-row"><button class="button-secondary" onclick="save()">Save profile</button><span id="save-status" role="status"></span></div>
+<hr class="divider">
+<div class="subhead"><h2>Tailored application</h2></div>
+<pre id="out">Choose a job and select Tailor to generate application materials.</pre>
+</div>
+</section>
+</main>
 <script>
 const F=["name","email","phone","location","linkedin","github","leetcode","portfolio"],$=id=>document.getElementById(id);
 const e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const api=async(u,o={})=>{const pw=localStorage.pw||(localStorage.pw=prompt('Password'));
  const r=await fetch(u,{...o,headers:{'x-pass':pw,'Content-Type':'application/json'}});
  if(r.status==401){delete localStorage.pw;alert('Wrong password, reload and retry');throw 0}return r.json()};
-$('pf').innerHTML=F.map(f=>`<input id=p_${f} placeholder=${f}>`).join('');
+$('pf').innerHTML=F.map(f=>`<input id=p_${f} placeholder="${f[0].toUpperCase()+f.slice(1)}" aria-label="${f}">`).join('');
 api('/api/profile').then(p=>[...F,'resume_text','extra'].forEach(f=>$('p_'+f).value=p[f]||''));
 async function save(){const p={};[...F,'resume_text','extra'].forEach(f=>p[f]=$('p_'+f).value);
- await api('/api/profile',{method:'POST',body:JSON.stringify(p)});alert('Saved')}
+ await api('/api/profile',{method:'POST',body:JSON.stringify(p)});$('save-status').textContent='Saved'}
 async function load(){const js=await api(`/api/jobs?q=${encodeURIComponent($('q').value)}&india=${+$('in').checked}&remote=${+$('re').checked}&intern=${+$('it').checked}&all=${+$('all').checked}`);
- $('jobs').innerHTML=js.map(j=>`<div class=job><b>${e(j.title)}</b><br>${e(j.company)} · ${e(j.location)}<br>
- <small>first seen ${new Date(j.seen*1000).toLocaleDateString()}</small><br>
- <a href="${e(j.url)}" target=_blank>Apply page</a> <button onclick="prep('${e(j._id)}')">Tailor</button></div>`).join('')||'No jobs yet. Run the GitHub workflow once.'}
+ $('job-count').textContent=`${js.length} ${js.length===1?'job':'jobs'}${js.length===200?' · showing up to 200':''}`;
+ $('jobs').innerHTML=js.map(j=>`<article class="job"><h3 class="job-title">${e(j.title)}</h3><p class="job-company">${e(j.company)} · ${e(j.location)}</p>
+ <small class="job-date">First seen ${new Date(j.seen*1000).toLocaleDateString()}</small>
+ <div class="job-actions"><a href="${e(j.url)}" target="_blank" rel="noopener noreferrer">View opening ↗</a><button class="button-primary" onclick="prep('${e(j._id)}')">Tailor</button></div></article>`).join('')||'<div class="empty">No jobs found. Try adjusting your search or filters.</div>'}
 async function prep(id){$('out').textContent='Generating...';$('out').textContent=JSON.stringify(await api('/api/tailor/'+id,{method:'POST'}),null,2)}
 load();
 </script>
+</body>
+</html>

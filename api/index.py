@@ -1,4 +1,4 @@
-import os, re, json
+import os, re, json, time
 from openai import OpenAI
 from fastapi import FastAPI, Header, HTTPException, Depends, Body
 from pymongo import MongoClient
@@ -12,8 +12,11 @@ def auth(x_pass: str = Header("")):
 app = FastAPI(dependencies=[Depends(auth)])
 
 @app.get("/api/jobs")
-def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0, all: int = 0):
-    conditions = [{"$or": [{"india": True}, {"remote": True}]}]
+def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0, all: int = 0, skip: int = 0):
+    conditions = [
+        {"$or": [{"india": True}, {"remote": True}]},
+        {"seen": {"$gte": time.time() - 10 * 86400}},
+    ]
     f = {}
     if q:
         conditions.append({"$or": [
@@ -25,7 +28,7 @@ def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0, all: int
         elif remote and not india: conditions.append({"remote": True})
         if intern: conditions.append({"intern": True})
     f["$and"] = conditions
-    return list(db.jobs.find(f, {"desc": 0}).sort("seen", -1).limit(200))
+    return list(db.jobs.find(f, {"desc": 0}).sort("seen", -1).skip(max(skip, 0)).limit(200))
 
 @app.get("/api/profile")
 def get_profile(): return (db.kv.find_one({"_id": "profile"}) or {}).get("v", {})

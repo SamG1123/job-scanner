@@ -197,7 +197,6 @@ async def scan():
                 location=job.get("location") or "",
                 url=job["url"],
                 seen=now,
-                last=now,
                 **classified
             )
 
@@ -227,10 +226,8 @@ async def scan():
         # Insert only after notification succeeds, so a failed send can retry.
         if new:
             col.insert_many(new, ordered=False)
-        if docs:
-            col.update_many({"_id": {"$in": list(docs)}}, {"$set": {"last": now}})
         col.delete_many({"india": {"$ne": True}, "remote": {"$ne": True}})
-        col.delete_many({"last": {"$lt": now - 10 * 86400}})
+        col.delete_many({"seen": {"$lt": now - 10 * 86400}})
     finally:
         client.close()
 
