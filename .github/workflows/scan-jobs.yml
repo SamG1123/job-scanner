@@ -1,7 +1,7 @@
 name: scan-jobs
 on:
   schedule:
-    - cron: "17 */4 * * *"   # every 4 hours at :17 UTC (05:47, 09:47, 13:47, 17:47, 21:47, 01:47 IST)
+    - cron: "47 0,6,12,18 * * *" # 00:17, 06:17, 12:17, and 18:17 IST
   workflow_dispatch:          # "Run workflow" button for manual scans
 jobs:
   scan:
@@ -20,3 +20,87 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}   # optional, defaults to onboarding@resend.dev
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      - name: Notify workflow result
+        if: always()
+        timeout-minutes: 2
+        env:
+          JOB_STATUS: ${{ job.status }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          status = os.environ.get("JOB_STATUS", "unknown").upper()
+          run_url = (
+              f"https://github.com/{os.environ['GITHUB_REPOSITORY']}"
+              f"/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+          )
+          message = (
+              f"Job scanner workflow {status}\n"
+              f"Event: {os.environ.get('GITHUB_EVENT_NAME', 'unknown')}\n"
+              f"Run: {run_url}"
+          )
+          errors = []
+          destinations = 0
+
+          def post(url, payload, headers=None):
+              request = urllib.request.Request(
+                  url,
+                  data=json.dumps(payload).encode(),
+                  headers={"Content-Type": "application/json", **(headers or {})},
+                  method="POST",
+              )
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  if not 200 <= response.status < 300:
+                      raise RuntimeError(f"HTTP {response.status}")
+
+          token = os.environ.get("TELEGRAM_BOT_TOKEN")
+          chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+          if token or chat_id:
+              if not token or not chat_id:
+                  errors.append("Telegram configuration is incomplete")
+              else:
+                  destinations += 1
+                  try:
+                      post(
+                          f"https://api.telegram.org/bot{token}/sendMessage",
+                          {"chat_id": chat_id, "text": message,
+                           "disable_web_page_preview": True},
+                      )
+                  except Exception as exc:
+                      errors.append(f"Telegram delivery failed ({type(exc).__name__})")
+
+          resend_key = os.environ.get("RESEND_API_KEY")
+          email_to = [address.strip() for address in
+                      os.environ.get("EMAIL_TO", "").split(",") if address.strip()]
+          if resend_key or email_to:
+              if not resend_key or not email_to:
+                  errors.append("Email configuration is incomplete")
+              else:
+                  destinations += 1
+                  try:
+                      post(
+                          "https://api.resend.com/emails",
+                          {"from": os.environ.get(
+                               "EMAIL_FROM"
+                           ) or "Job Alerts <onboarding@resend.dev>",
+                           "to": email_to,
+                           "subject": f"Job scanner workflow {status}",
+                           "text": message},
+                          {"Authorization": f"Bearer {resend_key}"},
+                      )
+                  except Exception as exc:
+                      errors.append(f"Email delivery failed ({type(exc).__name__})")
+
+          if destinations == 0:
+              errors.append("No notification destination is configured")
+          if errors:
+              raise SystemExit("; ".join(errors))
+          print(f"Workflow result sent to {destinations} notification destination(s).")
+          PY
