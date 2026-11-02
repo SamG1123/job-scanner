@@ -12,7 +12,11 @@ INDIA = re.compile(
     r"gurugram|gurgaon|noida|hyderabad|pune|chennai|kolkata|"
     r"ahmedabad|kochi|cochin|mysuru|mysore|thiruvananthapuram|"
     r"trivandrum|jaipur|indore|lucknow|chandigarh|bhubaneswar|"
-    r"coimbatore|visakhapatnam|vizag|nagpur|surat)\b",
+    r"coimbatore|visakhapatnam|vizag|nagpur|surat|vadodara|"
+    r"thiruchirappalli|trichy|mangaluru|mangalore|goa|"
+    r"dehradun|ranchi|patna|guwahati|raipur|jodhpur|"
+    r"faridabad|greater noida|thane|navi mumbai|"
+    r"india remote|remote india)\b",
     re.I
 )
 REMOTE = re.compile(
@@ -106,8 +110,14 @@ def classify_job(j):
     workplace_text = f"{title}\n{location}\n{desc}"
 
     india = bool(INDIA.search(location))
-    remote = bool(j.get("remote")) or bool(REMOTE.search(workplace_text))
-    hybrid = bool(j.get("hybrid")) or bool(HYBRID.search(workplace_text))
+    # A remote label alone is not evidence that the role can be performed
+    # from India. Location must first establish that this is an India hire.
+    remote = india and (
+        bool(j.get("remote")) or bool(REMOTE.search(workplace_text))
+    )
+    hybrid = india and (
+        bool(j.get("hybrid")) or bool(HYBRID.search(workplace_text))
+    )
 
     work_modes = set()
     if india:
@@ -188,7 +198,7 @@ async def scan():
     for (kind, token), jobs in zip(pairs, res):
         for job in jobs:
             classified = classify_job(job)
-            if not classified["india"] and not classified["remote"]:
+            if not classified["india"]:
                 continue
             docs[job["id"]] = dict(
                 _id=job["id"],
@@ -226,7 +236,7 @@ async def scan():
         # Insert only after notification succeeds, so a failed send can retry.
         if new:
             col.insert_many(new, ordered=False)
-        col.delete_many({"india": {"$ne": True}, "remote": {"$ne": True}})
+        col.delete_many({"india": {"$ne": True}})
         col.delete_many({"seen": {"$lt": now - 10 * 86400}})
     finally:
         client.close()

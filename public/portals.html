@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>India job portals · Job Scout</title><link rel="stylesheet" href="/app.css"></head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="/"><span class="brand-mark">J</span><span><span class="brand-title">Job Scout India</span><span class="brand-subtitle">India hiring, all in one place</span></span></a>
+  <nav class="nav" aria-label="Main navigation"><a href="/">Jobs</a><a href="/all-jobs.html">Browse all</a><a href="/portals.html" aria-current="page">Job portals</a><a href="/saved.html">Saved</a><a href="/profile.html">Profile</a><a href="/applications.html">Application tools</a></nav>
+</div></header>
+<main>
+  <header class="page-head"><h1>India job portals</h1><p>Search trusted job boards directly. These links open the portal in a new tab; Job Scout's collected listings stay limited to jobs hiring in India.</p></header>
+  <section class="panel"><div class="panel-body">
+    <label for="portal-query">Optional role or skill to search</label>
+    <div class="search-row"><input id="portal-query" type="search" placeholder="e.g. data analyst, product design" autocomplete="off"></div>
+    <div class="grid" id="portals"></div>
+  </div></section>
+</main>
+<script src="/app.js"></script>
+<script>
+const portals=[
+  {name:"Naukri",detail:"India's broadest job marketplace, with location and experience filters.",url:"https://www.naukri.com/"},
+  {name:"LinkedIn Jobs",detail:"Company postings, recruiter connections, and job alerts.",url:"https://www.linkedin.com/jobs/search/?location=India"},
+  {name:"Indeed India",detail:"Search a wide range of employer and recruiter listings.",url:"https://in.indeed.com/jobs?l=India"},
+  {name:"Foundit",detail:"India-focused listings across industries and experience levels.",url:"https://www.foundit.in/"},
+  {name:"Cutshort",detail:"Technology and startup roles, including early-stage teams.",url:"https://cutshort.io/jobs"},
+  {name:"Hirist",detail:"Technology, product, and digital roles in India.",url:"https://www.hirist.tech/"},
+  {name:"Instahyre",detail:"Curated opportunities from Indian startups and tech companies.",url:"https://www.instahyre.com/"},
+  {name:"Wellfound",detail:"Startup roles; check each listing's location and India eligibility.",url:"https://wellfound.com/jobs"}
+];
+function render(){
+  const query=document.getElementById("portal-query").value.trim();
+  document.getElementById("portals").innerHTML=portals.map(portal=>{
+    const url=new URL(portal.url);
+    if(query){
+      if(portal.name==="LinkedIn Jobs"){url.searchParams.set("keywords",query);url.searchParams.set("location","India");}
+      if(portal.name==="Indeed India"){url.searchParams.set("q",query);url.searchParams.set("l","India");}
+      if(portal.name==="Foundit"){url.searchParams.set("query",query);url.searchParams.set("locations","India");}
+      if(portal.name==="Wellfound")url.searchParams.set("query",query);
+    }
+    return `<article class="portal"><h2>${JobScout.escapeHtml(portal.name)}</h2><p class="muted">${JobScout.escapeHtml(portal.detail)}</p><a href="${JobScout.escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">Open ${JobScout.escapeHtml(portal.name)} ↗</a></article>`;
+  }).join("");
+}
+document.getElementById("portal-query").addEventListener("input",render);
+render();
+</script>
+</body>
+</html>

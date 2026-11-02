@@ -12,11 +12,18 @@ def auth(x_pass: str = Header("")):
 app = FastAPI(dependencies=[Depends(auth)])
 
 @app.get("/api/jobs")
-def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0, all: int = 0, skip: int = 0):
+def jobs(q: str = "", mode: str = "all", intern: int = 0, all: int = 0, skip: int = 0, ids: str = ""):
     conditions = [
-        {"$or": [{"india": True}, {"remote": True}]},
+        {"india": True},
         {"seen": {"$gte": time.time() - 10 * 86400}},
     ]
+    if mode not in {"all", "remote", "hybrid", "onsite"}:
+        raise HTTPException(422, "invalid work mode")
+    if ids:
+        requested_ids = [item for item in ids.split(",") if item][:200]
+        if not requested_ids:
+            return []
+        conditions.append({"_id": {"$in": requested_ids}})
     f = {}
     if q:
         conditions.append({"$or": [
@@ -24,8 +31,12 @@ def jobs(q: str = "", india: int = 0, remote: int = 0, intern: int = 0, all: int
             for k in ("title", "company", "desc")
         ]})
     if not all:
-        if india and not remote: conditions.append({"india": True})
-        elif remote and not india: conditions.append({"remote": True})
+        if mode == "remote": conditions.append({"remote": True})
+        elif mode == "hybrid": conditions.append({"hybrid": True})
+        elif mode == "onsite": conditions.extend([
+            {"remote": {"$ne": True}},
+            {"hybrid": {"$ne": True}},
+        ])
         if intern: conditions.append({"intern": True})
     f["$and"] = conditions
     return list(db.jobs.find(f, {"desc": 0}).sort("seen", -1).skip(max(skip, 0)).limit(200))
@@ -45,7 +56,7 @@ reworded from the resume to fit this job], "cover_letter":"<=250 words", "answer
 
 @app.post("/api/tailor/{jid}")
 def tailor(jid: str):
-    j, p = db.jobs.find_one({"_id": jid}), get_profile()
+    j, p = db.jobs.find_one({"_id": jid, "india": True}), get_profile()
     if not j: raise HTTPException(404, "job not found")
     if not p.get("resume_text"): return {"error": "Paste your resume text into the profile first."}
     m = OpenAI().chat.completions.create(model=MODEL, max_tokens=2500, response_format={"type": "json_object"},

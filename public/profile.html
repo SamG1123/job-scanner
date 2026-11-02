@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your profile · Job Scout</title><link rel="stylesheet" href="/app.css"></head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="/"><span class="brand-mark">J</span><span><span class="brand-title">Job Scout India</span><span class="brand-subtitle">India hiring, all in one place</span></span></a>
+  <nav class="nav" aria-label="Main navigation"><a href="/">Jobs</a><a href="/all-jobs.html">Browse all</a><a href="/portals.html">Job portals</a><a href="/saved.html">Saved</a><a href="/profile.html" aria-current="page">Profile</a><a href="/applications.html">Application tools</a></nav>
+</div></header>
+<main>
+  <header class="page-head"><h1>Your application profile</h1><p>Save your details and resume once. Application tools use only the facts you provide here.</p></header>
+  <section class="panel"><div class="panel-body">
+    <form id="profile-form">
+      <div class="form-grid" id="fields"></div>
+      <label for="resume_text">Resume text</label><textarea id="resume_text" rows="12" placeholder="Paste your resume text here"></textarea>
+      <label for="extra">Additional details</label><textarea id="extra" rows="4" placeholder="Skills, projects, notice period, expected CTC, or other relevant details"></textarea>
+      <div class="job-actions"><button class="primary" type="submit">Save profile</button><span class="status" id="status" role="status"></span></div>
+    </form>
+  </div></section>
+</main>
+<script src="/app.js"></script>
+<script>
+const fields=["name","email","phone","location","linkedin","github","leetcode","portfolio"];
+const holder=document.getElementById("fields");
+holder.innerHTML=fields.map(field=>`<div><label for="p_${field}">${field[0].toUpperCase()+field.slice(1)}</label><input id="p_${field}" autocomplete="off"></div>`).join("");
+async function loadProfile(){
+  const status=document.getElementById("status");
+  try{
+    const profile=await JobScout.api("/api/profile");
+    [...fields,"resume_text","extra"].forEach(field=>{document.getElementById(field==="resume_text"||field==="extra"?field:`p_${field}`).value=profile[field]||"";});
+    status.textContent="";
+  }catch(error){status.textContent=error.message;status.classList.add("error");}
+}
+document.getElementById("profile-form").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const status=document.getElementById("status");
+  status.classList.remove("error");status.textContent="Saving…";
+  const profile={};
+  [...fields,"resume_text","extra"].forEach(field=>{profile[field]=document.getElementById(field==="resume_text"||field==="extra"?field:`p_${field}`).value.trim();});
+  try{await JobScout.api("/api/profile",{method:"POST",body:JSON.stringify(profile)});status.textContent="Profile saved.";}
+  catch(error){status.textContent=error.message;status.classList.add("error");}
+});
+loadProfile();
+</script>
+</body>
+</html>

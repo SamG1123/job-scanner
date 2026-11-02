@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Application tools · Job Scout</title><link rel="stylesheet" href="/app.css"></head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="/"><span class="brand-mark">J</span><span><span class="brand-title">Job Scout India</span><span class="brand-subtitle">India hiring, all in one place</span></span></a>
+  <nav class="nav" aria-label="Main navigation"><a href="/">Jobs</a><a href="/all-jobs.html">Browse all</a><a href="/portals.html">Job portals</a><a href="/saved.html">Saved</a><a href="/profile.html">Profile</a><a href="/applications.html" aria-current="page">Application tools</a></nav>
+</div></header>
+<main>
+  <header class="page-head"><h1>Application toolkit</h1><p>Generate role-specific application material grounded in your saved resume and details. Review every suggestion before using it.</p></header>
+  <section class="panel"><div class="panel-body">
+    <label for="job-search">Find an India-based job</label><input id="job-search" type="search" placeholder="Search role or company" autocomplete="off">
+    <label for="job-select">Select a role</label><select id="job-select"><option value="">Loading recent India jobs…</option></select>
+    <div class="job-actions"><button class="primary" id="generate" type="button" disabled>Generate application kit</button><a href="/profile.html">Update your resume/profile</a><span id="status" class="status" role="status"></span></div>
+  </div></section>
+  <section class="panel" style="margin-top:1rem"><div class="panel-body" id="result"><p class="muted">Choose a role to prepare match notes, a resume summary, tailored bullets, and a draft cover letter.</p></div></section>
+</main>
+<script src="/app.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let generation=0,timer;
+function fillOptions(jobs,preferredId=""){
+  const select=$("job-select");
+  select.innerHTML='<option value="">Choose a role…</option>'+jobs.map(job=>`<option value="${JobScout.escapeHtml(job._id)}">${JobScout.escapeHtml(job.title)} — ${JobScout.escapeHtml(job.company)} (${JobScout.escapeHtml(job.location||"India")})</option>`).join("");
+  if(preferredId&&jobs.some(job=>job._id===preferredId))select.value=preferredId;
+  $("generate").disabled=!select.value;
+}
+async function loadJobs(){
+  const current=++generation;
+  $("status").textContent="Searching…";
+  $("generate").disabled=true;
+  try{
+    const params=new URLSearchParams({all:"1",q:$("job-search").value.trim()});
+    const jobs=await JobScout.api(`/api/jobs?${params}`);
+    if(current!==generation)return;
+    const preferred=new URLSearchParams(location.search).get("job")||"";
+    if(preferred&&!jobs.some(job=>job._id===preferred)){
+      const selected=await JobScout.api(`/api/jobs?all=1&ids=${encodeURIComponent(preferred)}`);
+      if(current!==generation)return;
+      fillOptions([...selected,...jobs],preferred);
+    }else fillOptions(jobs,preferred);
+    $("status").textContent=jobs.length?"": "No matching India-based jobs found.";
+  }catch(error){if(current===generation){$("status").textContent=error.message;$("status").classList.add("error");}}
+}
+function section(title,value){
+  if(value==null||value==="")return "";
+  const content=Array.isArray(value)?`<ul>${value.map(item=>`<li>${JobScout.escapeHtml(item)}</li>`).join("")}</ul>`:`<p>${JobScout.escapeHtml(value)}</p>`;
+  const copyText=Array.isArray(value)?value.join("\n"):String(value);
+  return `<section><h2 class="section-title">${JobScout.escapeHtml(title)}</h2><div class="output">${content}</div><button class="secondary copy" type="button" data-copy="${JobScout.escapeHtml(copyText)}">Copy ${JobScout.escapeHtml(title.toLowerCase())}</button></section>`;
+}
+$("job-search").addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(loadJobs,250)});
+$("job-select").addEventListener("change",()=>{$("generate").disabled=!$("job-select").value;});
+$("generate").addEventListener("click",async()=>{
+  const id=$("job-select").value;
+  if(!id)return;
+  $("generate").disabled=true;$("status").textContent="Preparing your application kit…";$("status").classList.remove("error");
+  $("result").innerHTML='<p class="muted">Generating role-specific material…</p>';
+  try{
+    const kit=await JobScout.api(`/api/tailor/${encodeURIComponent(id)}`,{method:"POST"});
+    if(kit.error){$("result").innerHTML=`<div class="empty">${JobScout.escapeHtml(kit.error)} <a href="/profile.html">Open your profile</a></div>`;return;}
+    $("result").innerHTML=[
+      section("Match notes",kit.match_notes),
+      section("Resume summary",kit.resume_summary),
+      section("Highlighted bullets",kit.highlight_bullets),
+      section("Cover letter",kit.cover_letter),
+      section("Application answers",kit.answers?Object.entries(kit.answers).map(([key,value])=>`${key}: ${value}`):"")
+    ].join("")||'<div class="empty">The application helper returned no content. Please try again.</div>';
+    $("status").textContent="Draft ready. Verify all facts and edit before submitting.";
+  }catch(error){$("result").innerHTML=`<div class="empty">${JobScout.escapeHtml(error.message)}</div>`;$("status").textContent="Could not generate the application kit.";$("status").classList.add("error");}
+  finally{$("generate").disabled=!$("job-select").value;}
+});
+document.addEventListener("click",async event=>{
+  const button=event.target.closest(".copy");
+  if(!button)return;
+  try{await navigator.clipboard.writeText(button.dataset.copy);button.textContent="Copied";}
+  catch{$("status").textContent="Clipboard access was unavailable. Select and copy the text manually.";$("status").classList.add("error");}
+});
+loadJobs();
+</script>
+</body>
+</html>

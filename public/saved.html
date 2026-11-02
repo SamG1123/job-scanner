@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Saved jobs · Job Scout</title><link rel="stylesheet" href="/app.css"></head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <a class="brand" href="/"><span class="brand-mark">J</span><span><span class="brand-title">Job Scout India</span><span class="brand-subtitle">India hiring, all in one place</span></span></a>
+  <nav class="nav" aria-label="Main navigation"><a href="/">Jobs</a><a href="/all-jobs.html">Browse all</a><a href="/portals.html">Job portals</a><a href="/saved.html" aria-current="page">Saved</a><a href="/profile.html">Profile</a><a href="/applications.html">Application tools</a></nav>
+</div></header>
+<main>
+  <header class="page-head"><h1>Saved India jobs</h1><p>Saved in this browser so you can come back to them later.</p></header>
+  <section class="panel"><div class="panel-body"><p class="status" id="status" aria-live="polite">Loading saved jobs…</p><div id="jobs"></div></div></section>
+</main>
+<script src="/app.js"></script>
+<script>
+async function loadSaved(){
+  const ids=JobScout.savedIds();
+  const status=document.getElementById("status"),list=document.getElementById("jobs");
+  if(!ids.length){status.textContent="";list.innerHTML='<div class="empty">No saved jobs yet. Save roles from the Jobs page to keep them here.</div>';return;}
+  status.textContent="Loading saved jobs…";
+  try{
+    const jobs=await JobScout.api(`/api/jobs?ids=${encodeURIComponent(ids.join(","))}&all=1`);
+    const savedOrder=new Map(ids.map((id,index)=>[id,index]));
+    jobs.sort((a,b)=>savedOrder.get(a._id)-savedOrder.get(b._id));
+    status.textContent=`${jobs.length} saved ${jobs.length===1?"job":"jobs"}`;
+    list.innerHTML=jobs.map(job=>JobScout.jobCard(job,{remove:true})).join("")||'<div class="empty">These saved listings are no longer available. Save another role from Jobs.</div>';
+  }catch(error){status.textContent=error.message;status.classList.add("error");}
+}
+window.addEventListener("job-saved",loadSaved);
+loadSaved();
+</script>
+</body>
+</html>
